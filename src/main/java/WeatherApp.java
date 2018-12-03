@@ -1,16 +1,14 @@
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Arrays;
+import java.time.LocalTime;
+import java.util.LinkedList;
+import java.util.List;
 
 public class WeatherApp {
-    public static void main(String[] args) throws IOException, InterruptedException, ParserConfigurationException, SAXException, XPathExpressionException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder().build();
         HttpRequest getWeatherHtml = HttpRequest
                 .newBuilder()
@@ -19,13 +17,28 @@ public class WeatherApp {
                 .build();
         String weatherGcHourly = client.send(getWeatherHtml, HttpResponse.BodyHandlers.ofString()).body();
         String[] lines = weatherGcHourly.split("\n");
-        Arrays.stream(lines).forEach(line -> {
+        List<Forecast> hourlyForecasts = new LinkedList<>();
+        Forecast currentForecast = null;
+        for(String line: lines) {
             if (line.contains("<td headers=\"header1\" class=\"text-center\">")) {
-                System.out.println(line);
+                currentForecast = new Forecast();
+                currentForecast.setTime(getLocalTime(line));
             }
             if (line.contains("<td headers=\"header2\" class=\"text-center\">")) {
-                System.out.println(line);
+                currentForecast.setDegreesCelsius(getDegrees(line));
+                hourlyForecasts.add(currentForecast);
             }
-        });
+        }
+        hourlyForecasts.stream().forEach(System.out::println);
+    }
+
+    private static double getDegrees(String line) {
+        String degreesString = line.substring(line.indexOf(">") + 1, line.lastIndexOf("<"));
+        return Double.parseDouble(degreesString);
+    }
+
+    private static LocalTime getLocalTime(String line) {
+        String timeString = line.substring(line.indexOf(">") + 1, line.lastIndexOf("<"));
+        return LocalTime.parse(timeString);
     }
 }
