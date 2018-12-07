@@ -8,6 +8,7 @@ import java.net.URL;
 import java.time.LocalTime;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class WeatherApp implements RequestHandler<Request, Response> {
     public static void main(String[] args) {
@@ -65,7 +66,17 @@ public class WeatherApp implements RequestHandler<Request, Response> {
 
             @Override
             public LambdaLogger getLogger() {
-                return null;
+                return new LambdaLogger() {
+                    @Override
+                    public void log(String s) {
+                        System.out.println(s);
+                    }
+
+                    @Override
+                    public void log(byte[] bytes) {
+
+                    }
+                };
             }
         });
     }
@@ -92,7 +103,7 @@ public class WeatherApp implements RequestHandler<Request, Response> {
                     hourlyForecasts.add(currentForecast);
                 }
             }
-            hourlyForecasts.stream().forEach(System.out::println);
+            context.getLogger().log(hourlyForecasts.stream().map(f -> f.toString()).collect(Collectors.joining("\n")));
             return new Response();
         } catch(Exception e) {
             throw new RuntimeException(e);
